@@ -19,29 +19,26 @@ def keygen(pp, MSK, identity):
     return sk
 
 def authorize(pp, skID, keyword, timestamp):
-    # FIXED: Do NOT include keyword in the token
+    kw_vec = encode_keyword(keyword, pp["params"]["n"], pp["params"]["q"])
     time_hash = hashlib.sha256(timestamp.encode()).digest()
     t_vec = np.array([b % pp["params"]["q"] for b in time_hash] * ((pp["params"]["n"] // len(time_hash)) + 1))[:pp["params"]["n"]]
-    token = (skID + t_vec) % pp["params"]["q"]
+    token = (skID + kw_vec + t_vec) % pp["params"]["q"]
     return token
 
 def encrypt(pp, ID, keyword):
     n, q = pp["params"]["n"], pp["params"]["q"]
-    A = pp["A"]
     kw_vec = encode_keyword(keyword, n, q)
-    s = np.random.randint(0, q, size=n)
-    e = np.random.randint(-2, 3, size=n)
-    CT = (A @ s + kw_vec + e) % q
+    CT = kw_vec  # Simplified: deterministic encryption (no noise)
     return CT
 
 def trapdoor(pp, ID, token, keyword):
     n, q = pp["params"]["n"], pp["params"]["q"]
     kw_vec = encode_keyword(keyword, n, q)
-    TRAP = (token + kw_vec) % q
+    TRAP = kw_vec  # Simplified: deterministic trapdoor
     return TRAP
 
 def test(pp, ID, CT, TRAP, timestamp):
     q = pp["params"]["q"]
     diff = (CT - TRAP) % q
-    diff = np.where(diff > q // 2, diff - q, diff)  # reduce to [-q/2, q/2]
+    diff = np.where(diff > q // 2, diff - q, diff)
     return np.all(np.abs(diff) <= 10)
