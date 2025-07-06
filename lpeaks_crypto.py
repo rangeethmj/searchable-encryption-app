@@ -2,6 +2,7 @@ import numpy as np
 import hashlib
 from setup import generate_matrix_A, get_params
 from utils import encode_keyword
+from datetime import datetime
 
 def setup():
     pp = {
@@ -35,13 +36,22 @@ def encrypt(pp, ID, keyword):
     return CT
 
 def trapdoor(pp, ID, token, keyword):
-    n, q = pp["params"]["n"], pp["params"]["q"]
-    kw_vec = encode_keyword(keyword, n, q)
-    TRAP = (token + kw_vec) % q
-    return TRAP
+    # ✅ FIXED: Don't add kw_vec again
+    return token
 
-def test(pp, ID, CT, TRAP, timestamp):
+def test(pp, ID, CT, TRAP, current_time_str, authorized_until=None):
     q = pp["params"]["q"]
+
+    # Optional: validate time-based authorization
+    if authorized_until:
+        try:
+            now = datetime.fromisoformat(current_time_str)
+            expire = datetime.fromisoformat(authorized_until)
+            if now > expire:
+                return False  # Authorization expired
+        except:
+            pass  # If format is invalid, ignore time check
+
     diff = (CT - TRAP) % q
-    diff = np.where(diff > q // 2, diff - q, diff)
+    diff = np.where(diff > q // 2, diff - q, diff)  # Center around 0
     return np.all(np.abs(diff) <= 10)
