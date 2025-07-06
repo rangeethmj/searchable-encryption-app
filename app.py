@@ -81,3 +81,17 @@ with st.form("search_form"):
                     st.write("---")
             else:
                 st.error("Please enter a keyword to search.")
+                
+# ====================================
+# 🗂️ Server Database View (for demo)
+# ====================================
+st.header("🗂️ Server Database View (Debug Mode)")
+if not st.session_state.encrypted_keywords:
+    st.info("No encrypted keywords stored yet.")
+else:
+    for i, (owner, orig_kw, CT) in enumerate(st.session_state.encrypted_keywords):
+        st.write(f"🔐 Entry {i+1}")
+        st.write(f"- Receiver/User ID: `{owner}`")
+        st.write(f"- Original Keyword (for demo): `{orig_kw}`")
+        st.write(f"- Encrypted Vector (CT): `{CT.tolist()}`")
+        st.markdown("---")
