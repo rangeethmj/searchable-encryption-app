@@ -2,7 +2,6 @@ import numpy as np
 import hashlib
 from setup import generate_matrix_A, get_params
 from utils import encode_keyword
-from datetime import datetime
 
 def setup():
     pp = {
@@ -20,10 +19,10 @@ def keygen(pp, MSK, identity):
     return sk
 
 def authorize(pp, skID, keyword, timestamp):
-    kw_vec = encode_keyword(keyword, pp["params"]["n"], pp["params"]["q"])
+    # FIXED: Do NOT include keyword in the token
     time_hash = hashlib.sha256(timestamp.encode()).digest()
     t_vec = np.array([b % pp["params"]["q"] for b in time_hash] * ((pp["params"]["n"] // len(time_hash)) + 1))[:pp["params"]["n"]]
-    token = (skID + kw_vec + t_vec) % pp["params"]["q"]
+    token = (skID + t_vec) % pp["params"]["q"]
     return token
 
 def encrypt(pp, ID, keyword):
@@ -36,22 +35,13 @@ def encrypt(pp, ID, keyword):
     return CT
 
 def trapdoor(pp, ID, token, keyword):
-    # ✅ FIXED: Don't add kw_vec again
-    return token
+    n, q = pp["params"]["n"], pp["params"]["q"]
+    kw_vec = encode_keyword(keyword, n, q)
+    TRAP = (token + kw_vec) % q
+    return TRAP
 
-def test(pp, ID, CT, TRAP, current_time_str, authorized_until=None):
+def test(pp, ID, CT, TRAP, timestamp):
     q = pp["params"]["q"]
-
-    # Optional: validate time-based authorization
-    if authorized_until:
-        try:
-            now = datetime.fromisoformat(current_time_str)
-            expire = datetime.fromisoformat(authorized_until)
-            if now > expire:
-                return False  # Authorization expired
-        except:
-            pass  # If format is invalid, ignore time check
-
     diff = (CT - TRAP) % q
-    diff = np.where(diff > q // 2, diff - q, diff)  # Center around 0
+    diff = np.where(diff > q // 2, diff - q, diff)  # reduce to [-q/2, q/2]
     return np.all(np.abs(diff) <= 10)
