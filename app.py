@@ -75,7 +75,9 @@ with st.form("search_form"):
                 now = datetime.now().isoformat()
                 for i, (owner, orig_kw, CT) in enumerate(st.session_state.encrypted_keywords):
                     match = test(st.session_state.pp, searcher_id, CT, TRAP, now)
-                    st.write(f"{i+1}. Keyword encrypted by '{owner}'")
-                    st.write(f"Match with '{kw_query}'? {'✅ YES' if match else '❌ NO'}")
+                    st.write(f"{i+1}. Encrypted by: '{owner}' | Original keyword: '{orig_kw}'")
+                    st.write(f"Search query: '{kw_query}' | Time now: {now} | Authorized until: {auth_time}")
+                    st.write(f"Match result: {'✅ YES' if match else '❌ NO'}")
+                    st.write("---")
             else:
                 st.error("Please enter a keyword to search.")
